@@ -1,0 +1,13 @@
+section {
+    background: #DDD;
+    padding: 10px;
+}
+
+h1 {
+    color: #333;
+}
+
+p {
+    border: 1px solid #888;
+    padding: 10px;
+}
