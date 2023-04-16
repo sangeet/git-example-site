@@ -2,40 +2,61 @@ const nameInput = document.getElementById("name");
 const addNameButton = document.getElementById("addNameButton");
 const clearAllButton = document.getElementById("clearDataButton");
 const namesList = document.getElementById("namesList");
+const fetchingStatus = document.getElementById("fetchingStatus");
 
 let list = [];
-fetchListFromStorage();
-renderNamesList();
+let isFetching = false;
+fetchUsers()
+    .then(() => {
+        console.log("Rendering list:", list);
+        renderNamesList()
+    });
 
-function removeFromList(listItem) {
-    list = list.filter(item => item !== listItem);
-    addListToStorage();
-    renderNamesList();
-}
-
-function clearListFromStorage() {
-    list = [];
-    localStorage.removeItem("list");
-    renderNamesList();
-}
-
-function addListToStorage() {
-    localStorage.setItem("list", JSON.stringify(list));
-}
-
-function fetchListFromStorage() {
-    const listString = localStorage.getItem("list");
-    console.log(listString);
-    if (listString !== null) {
-        list = JSON.parse(listString);
+function updateFetchStatus(fetchingBool) {
+    isFetching = fetchingBool;
+    if (isFetching) {
+        fetchingStatus.innerHTML = "Fetching...";
+    } else {
+        fetchingStatus.innerHTML = "";
     }
 }
+
+
+async function fetchUsers() {
+    updateFetchStatus(true);
+    return fetch("https://jsonplaceholder.typicode.com/users")
+        .then(response => {
+            updateFetchStatus(false);
+            return response.json();
+        })
+        .then(json => {
+            updateFetchStatus(false);
+            list = json
+        })
+        .catch((err) => {
+            updateFetchStatus(false);
+            console.log(err);
+        });
+}
+
+function removeFromList(listItem) {
+    fetch(`https://jsonplaceholder.typicode.com/users/${listItem.id}`, {method: "DELETE"})
+        .then(response => {
+            if (response.ok) {
+                list = list.filter(item => item !== listItem);
+                renderNamesList();
+            } else {
+                console.log(`Failed to delete ${listItem.id}`)
+            }
+        })
+        .catch((err) => console.log(err));
+}
+
 
 function addName() {
     const value = nameInput.value;
     if (!list.includes(value) && value !== "") {
         list.push(value);
-        addListToStorage();
         nameInput.value = "";
     }
     renderNamesList();
@@ -48,7 +69,7 @@ function renderNamesList() {
             const listElement = document.createElement('li')
 
             const spanElement = document.createElement('span');
-            spanElement.innerHTML = listItem;
+            spanElement.innerHTML = listItem.username;
             listElement.appendChild(spanElement);
 
             const buttonElement = document.createElement('button');
@@ -63,6 +84,5 @@ function renderNamesList() {
 
 addNameButton.addEventListener('click', addName);
 clearAllButton.addEventListener('click', () => {
-    clearListFromStorage();
     renderNamesList();
 });
